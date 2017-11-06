@@ -305,7 +305,7 @@ class RuleFit(BaseEstimator, TransformerMixin):
                  tree_generator=None,
                 rfmode='regress',lin_trim_quantile=0.025,
                 lin_standardise=True, exp_rand_tree_size=True,
-                model_type='rl',random_state=None):
+                model_type='rl',random_state=None,njobs=1):
         self.tree_generator = tree_generator
         self.rfmode=rfmode
         self.lin_trim_quantile=lin_trim_quantile
@@ -319,6 +319,7 @@ class RuleFit(BaseEstimator, TransformerMixin):
         self.tree_size=tree_size
         self.random_state=random_state
         self.model_type=model_type
+        self.n_jobs=n_jobs
         
     def fit(self, X, y=None, feature_names=None):
         """Fit and estimate linear combination of rule ensemble
@@ -335,10 +336,10 @@ class RuleFit(BaseEstimator, TransformerMixin):
             if self.tree_generator is None:
                 n_estimators_default=int(np.ceil(self.max_rules/self.tree_size))
                 self.sample_fract_=min(0.5,(100+6*np.sqrt(N))/N)
-                if   self.rfmode=='regress':
+                if self.rfmode=='regress':
                     self.tree_generator = GradientBoostingRegressor(n_estimators=n_estimators_default, max_leaf_nodes=self.tree_size, learning_rate=self.memory_par,subsample=self.sample_fract_,random_state=self.random_state,max_depth=100)
                 else:
-                    self.tree_generator =GradientBoostingClassifier(n_estimators=n_estimators_default, max_leaf_nodes=self.tree_size, learning_rate=self.memory_par,subsample=self.sample_fract_,random_state=self.random_state,max_depth=100)
+                    self.tree_generator = GradientBoostingClassifier(n_estimators=n_estimators_default, max_leaf_nodes=self.tree_size, learning_rate=self.memory_par,subsample=self.sample_fract_,random_state=self.random_state,max_depth=100)
     
             if   self.rfmode=='regress':
                 if type(self.tree_generator) not in [GradientBoostingRegressor,RandomForestRegressor]:
@@ -396,12 +397,12 @@ class RuleFit(BaseEstimator, TransformerMixin):
 
         ## fit Lasso
         if self.rfmode=='regress':
-            self.lscv = LassoCV(random_state=self.random_state)
+            self.lscv = LassoCV(random_state=self.random_state, n_jobs=self.n_jobs)
             self.lscv.fit(X_concat, y)
             self.coef_=self.lscv.coef_
             self.intercept_=self.lscv.intercept_
         else:
-            self.lscv=LogisticRegressionCV(cv=3,penalty='l1',random_state=self.random_state,solver='liblinear')
+            self.lscv=LogisticRegressionCV(cv=3, penalty='l1', random_state=self.random_state, n_jobs=self.n_jobs, solver='liblinear')
             self.lscv.fit(X_concat, y)
             self.coef_=self.lscv.coef_[0]
             self.intercept_=self.lscv.intercept_[0]
