@@ -305,7 +305,7 @@ class RuleFit(BaseEstimator, TransformerMixin):
                  tree_generator=None,
                 rfmode='regress',lin_trim_quantile=0.025,
                 lin_standardise=True, exp_rand_tree_size=True,
-                model_type='rl',random_state=None,njobs=1):
+                model_type='rl',random_state=None,n_jobs=1):
         self.tree_generator = tree_generator
         self.rfmode=rfmode
         self.lin_trim_quantile=lin_trim_quantile
